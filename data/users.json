@@ -1,0 +1,17 @@
+{
+  "1271130775726723124": {
+    "balance": 1855,
+    "totalWon": 2456,
+    "totalLost": 1900,
+    "gamesPlayed": 13,
+    "winRate": "61.5",
+    "rank": "🥉 Bronze",
+    "lastDaily": 1768037352936,
+    "createdAt": 1768037339580,
+    "gamesPlayedByType": {
+      "blackjack": 1,
+      "roulette": 1
+    },
+    "currentStreak": 1
+  }
+}
