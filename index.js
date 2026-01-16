@@ -71,6 +71,64 @@ client.once('ready', async () => {
   }
 });
 
+  // Event: Nouveau membre
+  const { Events } = require('discord.js');
+  client.on(Events.GuildMemberAdd, async member => {
+    // ID du salon de bienvenue et feedback
+    const welcomeChannelId = '1461862002359013396';
+    const feedbackChannelId = '1460807691143483637';
+    const welcomeChannel = member.guild.channels.cache.get(welcomeChannelId);
+
+    if (!welcomeChannel) return;
+
+    const { EmbedBuilder } = require('discord.js');
+    const embed = new EmbedBuilder()
+      .setColor('#FFD700')
+      .setTitle(`🎰 Bienvenue ${member.user.username} au Casino !`)
+      .setDescription('Prêt à tenter ta chance ? Voici comment commencer :')
+      .addFields(
+        { 
+          name: '💰 Pour démarrer', 
+          value: '• Tu reçois **1000 coins** gratuits !\n• Utilise `/daily` chaque jour pour des bonus\n• `/balance` pour voir ton solde', 
+          inline: false 
+        },
+        { 
+          name: '🎮 Jeux disponibles', 
+          value: '• `/crash` - Multiplicateur qui monte\n• `/dice` - Parie haut ou bas\n• `/blackjack` - Atteins 21\n• `/roulette` - Rouge ou noir', 
+          inline: false 
+        },
+        { 
+          name: '🏆 Système', 
+          value: '• Gagne des achievements\n• Monte dans les rangs (Bronze → Diamond)\n• `/leaderboard` pour voir le top 10', 
+          inline: false 
+        },
+        { 
+          name: '💸 Entre joueurs', 
+          value: '• `/transfer` - Envoie des coins\n• `/loan request` - Emprunte (avec intérêts !)\n• `/loan repay` - Rembourse', 
+          inline: false 
+        },
+        { 
+          name: '⚠️ BETA TEST', 
+          value: `• Le casino est en phase de test\n• Des règles peuvent changer\n• **Partage tes avis dans <#${feedbackChannelId}>**`, 
+          inline: false 
+        },
+        { 
+          name: '📖 Aide', 
+          value: 'Utilise `/help` pour le guide complet !', 
+          inline: false 
+        }
+      )
+      .setThumbnail(member.user.displayAvatarURL())
+      .setFooter({ text: '🎲 Joue responsable et amuse-toi bien !' })
+      .setTimestamp();
+
+    try {
+      await welcomeChannel.send({ content: `<@${member.id}>`, embeds: [embed] });
+    } catch (error) {
+      console.error('Erreur envoi bienvenue:', error);
+    }
+  });
+
 // Event: Interaction (slash commands + boutons)
 client.on(Events.InteractionCreate, async interaction => {
   // Gérer les slash commands
