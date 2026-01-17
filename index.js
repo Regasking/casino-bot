@@ -72,7 +72,6 @@ client.once('ready', async () => {
 });
 
   // Event: Nouveau membre
-  const { Events } = require('discord.js');
   client.on(Events.GuildMemberAdd, async member => {
     // ID du salon de bienvenue et feedback
     const welcomeChannelId = '1461862002359013396';
@@ -327,4 +326,5 @@ client.on(Events.InteractionCreate, async interaction => {
 client.login(process.env.DISCORD_TOKEN);
 
 // Export pour partager activeGames
+
 module.exports = { client, activeGames };
