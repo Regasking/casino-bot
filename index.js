@@ -72,7 +72,7 @@ client.once('ready', async () => {
 
   // Nettoyage automatique des prêts expirés
   const loanSystem = require('./systems/loans');
-  loanSystem.cleanupExpiredLoans();
+ loanSystem.cleanExpiredLoans();
   // Nettoyer les prêts expirés toutes les heures
   setInterval(() => {
     const loanSystem = require('./systems/loans');
@@ -438,4 +438,5 @@ client.on(Events.InteractionCreate, async interaction => {
 client.login(process.env.DISCORD_TOKEN);
 
 // Export pour partager activeGames
+
 module.exports = { client, activeGames };
