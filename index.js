@@ -69,6 +69,15 @@ client.once('ready', async () => {
   } catch (error) {
     console.error('❌ Erreur:', error);
   }
+
+  // Nettoyage automatique des prêts expirés
+  const loanSystem = require('./systems/loans');
+  loanSystem.cleanupExpiredLoans();
+  // Nettoyer les prêts expirés toutes les heures
+  setInterval(() => {
+    const loanSystem = require('./systems/loans');
+    loanSystem.cleanExpiredLoans();
+  }, 3600000); // 1 heure
 });
 
   // Event: Nouveau membre
@@ -160,6 +169,109 @@ client.on(Events.InteractionCreate, async interaction => {
 
   // Gérer les boutons
   if (interaction.isButton()) {
+    // Boutons de prêt
+    if (interaction.customId.startsWith('loan_')) {
+      const parts = interaction.customId.split('_');
+      const action = parts[1]; // accept ou refuse
+      const loanId = parts.slice(2).join('_'); // Le reste est l'ID
+      
+      const loanSystem = require('./systems/loans');
+      const pendingLoan = loanSystem.getLoanRequest(loanId);
+
+      if (!pendingLoan) {
+        return interaction.reply({ content: '❌ Cette demande a expiré ou n\'existe plus !', ephemeral: true });
+      }
+
+      // Vérifier que c'est bien le prêteur
+      if (interaction.user.id !== pendingLoan.lenderId) {
+        return interaction.reply({ content: '❌ Cette demande ne t\'est pas destinée !', ephemeral: true });
+      }
+
+      const borrower = await interaction.client.users.fetch(pendingLoan.borrowerId);
+
+      if (action === 'accept') {
+        // Vérifier à nouveau que le prêteur a toujours assez
+        const lenderUser = economy.getUser(pendingLoan.lenderId);
+        if (lenderUser.balance < pendingLoan.amount) {
+          loanSystem.refuseLoan(loanId);
+          return interaction.update({ 
+            content: `❌ Tu n'as plus assez de coins ! (Il te faut ${pendingLoan.amount} ${economy.currency})`,
+            embeds: [],
+            components: [] 
+          });
+        }
+
+        // Vérifier que l'emprunteur n'a pas déjà un prêt
+        const borrowerUser = economy.getUser(pendingLoan.borrowerId);
+        if (borrowerUser.activeLoan) {
+          loanSystem.refuseLoan(loanId);
+          return interaction.update({ 
+            content: `❌ ${borrower.username} a déjà un prêt actif entre-temps !`,
+            embeds: [],
+            components: [] 
+          });
+        }
+
+        // Accepter le prêt
+        const result = economy.requestLoan(
+          pendingLoan.borrowerId,
+          pendingLoan.lenderId,
+          pendingLoan.amount
+        );
+
+        if (!result.success) {
+          loanSystem.refuseLoan(loanId);
+          return interaction.update({ 
+            content: `❌ ${result.reason}`,
+            embeds: [],
+            components: [] 
+          });
+        }
+
+        loanSystem.acceptLoan(loanId);
+
+        const { EmbedBuilder } = require('discord.js');
+        const embed = new EmbedBuilder()
+          .setColor('#00FF00')
+          .setTitle('✅ PRÊT ACCORDÉ')
+          .setDescription(`Tu as prêté **${result.amount}** ${economy.currency} à **${borrower.username}** !`)
+          .addFields(
+            { name: '💰 Montant prêté', value: `${result.amount.toLocaleString()} ${economy.currency}`, inline: true },
+            { name: '📈 Intérêts', value: `${result.interest.toLocaleString()} ${economy.currency}`, inline: true },
+            { name: '💸 Tu recevras', value: `${result.totalDue.toLocaleString()} ${economy.currency}`, inline: true }
+          )
+          .setFooter({ text: `💵 Nouvelle balance : ${economy.getUser(interaction.user.id).balance} ${economy.currency}` })
+          .setTimestamp();
+
+        await interaction.update({ embeds: [embed], components: [] });
+
+        // Notifier l'emprunteur
+        try {
+          await borrower.send({ 
+            content: `✅ **${interaction.user.username}** a accepté ton prêt !\n💰 Tu as reçu **${result.amount}** ${economy.currency}\n💸 Tu devras rembourser **${result.totalDue}** ${economy.currency}\n\n💡 Utilise \`/loan repay\` pour rembourser quand tu es prêt.` 
+          });
+        } catch (e) {
+          // DM fermés
+        }
+
+      } else if (action === 'refuse') {
+        loanSystem.refuseLoan(loanId);
+
+        await interaction.update({ 
+          content: `❌ Tu as refusé la demande de prêt de **${borrower.username}**.`,
+          embeds: [],
+          components: [] 
+        });
+
+        // Notifier l'emprunteur
+        try {
+          await borrower.send({ content: `❌ **${interaction.user.username}** a refusé ta demande de prêt.` });
+        } catch (e) {
+          // DM fermés
+        }
+      }
+    }
+
     // Bouton Cash Out du Crash
     if (interaction.customId.startsWith('cashout_')) {
       // RÉPONSE IMMÉDIATE
@@ -326,5 +438,4 @@ client.on(Events.InteractionCreate, async interaction => {
 client.login(process.env.DISCORD_TOKEN);
 
 // Export pour partager activeGames
-
 module.exports = { client, activeGames };
