@@ -270,6 +270,175 @@ class EconomySystem {
     }
     return null;
   }
+  // Système de prêts
+  requestLoan(borrowerId, lenderId, amount) {
+    const borrower = this.getUser(borrowerId);
+    const lender = this.getUser(lenderId);
+
+    // Vérifications
+    if (lender.balance < amount) {
+      return { success: false, reason: "Le prêteur n'a pas assez de coins" };
+    }
+
+    if (amount < 100 || amount > 5000) {
+      return { success: false, reason: "Montant invalide (min 100, max 5000)" };
+    }
+
+    // Vérifier si l'emprunteur a déjà un prêt actif
+    if (!borrower.activeLoan) borrower.activeLoan = null;
+    if (borrower.activeLoan) {
+      return { success: false, reason: "Tu as déjà un prêt actif !" };
+    }
+
+    // Créer le prêt (10% d'intérêt)
+    const interest = Math.floor(amount * 0.10);
+    const totalDue = amount + interest;
+
+    borrower.activeLoan = {
+      lenderId,
+      amount,
+      interest,
+      totalDue,
+      timestamp: Date.now()
+    };
+
+    // Transférer l'argent
+    this.removeMoney(lenderId, amount);
+    this.addMoney(borrowerId, amount);
+
+    this.saveData();
+
+    return {
+      success: true,
+      amount,
+      interest,
+      totalDue,
+      lenderName: lenderId
+    };
+  }
+
+  repayLoan(borrowerId) {
+    const borrower = this.getUser(borrowerId);
+
+    if (!borrower.activeLoan) {
+      return { success: false, reason: "Tu n'as pas de prêt actif" };
+    }
+
+    const loan = borrower.activeLoan;
+
+    if (borrower.balance < loan.totalDue) {
+      return {
+        success: false,
+        reason: `Balance insuffisante ! Il te faut ${loan.totalDue} ${this.currency}`,
+        needed: loan.totalDue,
+        current: borrower.balance
+      };
+    }
+
+    // Rembourser
+    this.removeMoney(borrowerId, loan.totalDue);
+    this.addMoney(loan.lenderId, loan.totalDue);
+
+    borrower.activeLoan = null;
+    this.saveData();
+
+    return {
+      success: true,
+      amount: loan.amount,
+      interest: loan.interest,
+      total: loan.totalDue
+    };
+  }
+
+  getLoanStatus(userId) {
+    const user = this.getUser(userId);
+    return user.activeLoan || null;
+  }
+  
+  // Système de prêts
+  requestLoan(borrowerId, lenderId, amount) {
+    const borrower = this.getUser(borrowerId);
+    const lender = this.getUser(lenderId);
+
+    // Vérifications
+    if (lender.balance < amount) {
+      return { success: false, reason: "Le prêteur n'a pas assez de coins" };
+    }
+
+    if (amount < 100 || amount > 5000) {
+      return { success: false, reason: "Montant invalide (min 100, max 5000)" };
+    }
+
+    // Vérifier si l'emprunteur a déjà un prêt actif
+    if (!borrower.activeLoan) borrower.activeLoan = null;
+    if (borrower.activeLoan) {
+      return { success: false, reason: "Tu as déjà un prêt actif !" };
+    }
+
+    // Créer le prêt (10% d'intérêt)
+    const interest = Math.floor(amount * 0.10);
+    const totalDue = amount + interest;
+
+    borrower.activeLoan = {
+      lenderId,
+      amount,
+      interest,
+      totalDue,
+      timestamp: Date.now()
+    };
+
+    // Transférer l'argent
+    this.removeMoney(lenderId, amount);
+    this.addMoney(borrowerId, amount);
+
+    this.saveData();
+
+    return { 
+      success: true, 
+      amount, 
+      interest, 
+      totalDue,
+      lenderName: lenderId
+    };
+  }
+
+  repayLoan(borrowerId) {
+    const borrower = this.getUser(borrowerId);
+
+    if (!borrower.activeLoan) {
+      return { success: false, reason: "Tu n'as pas de prêt actif" };
+    }
+
+    const loan = borrower.activeLoan;
+
+    if (borrower.balance < loan.totalDue) {
+      return { 
+        success: false, 
+        reason: `Balance insuffisante ! Il te faut ${loan.totalDue} ${this.currency}`,
+        needed: loan.totalDue,
+        current: borrower.balance
+      };
+    }
+
+    // Rembourser
+    this.removeMoney(borrowerId, loan.totalDue);
+    this.addMoney(loan.lenderId, loan.totalDue);
+
+    borrower.activeLoan = null;
+    this.saveData();
+
+    return { 
+      success: true, 
+      amount: loan.amount,
+      interest: loan.interest,
+      total: loan.totalDue
+    };
+  }
+
+  getLoanStatus(userId) {
+    const user = this.getUser(userId);
+    return user.activeLoan || null;
+  }
 }
 
 module.exports = new EconomySystem();
