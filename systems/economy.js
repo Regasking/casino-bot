@@ -453,6 +453,291 @@ class EconomySystem {
     const user = this.getUser(userId);
     return user.activeLoan || null;
   }
+
+  // Intérêts bancaires
+  calculateInterest(userId) {
+    const user = this.getUser(userId);
+    
+    // Intérêts seulement si balance >= 10,000
+    if (user.balance < 10000) {
+      return { eligible: false, reason: "Balance minimum 10,000 coins" };
+    }
+
+    const lastClaim = user.lastInterestClaim || user.createdAt;
+    const now = Date.now();
+    const timeSinceLastClaim = now - lastClaim;
+    const daysElapsed = Math.floor(timeSinceLastClaim / (24 * 60 * 60 * 1000));
+
+    if (daysElapsed < 1) {
+      const timeLeft = (24 * 60 * 60 * 1000) - timeSinceLastClaim;
+      const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+      const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+      
+      return { 
+        eligible: false, 
+        reason: "Déjà réclamé aujourd'hui",
+        timeLeft: { hours: hoursLeft, minutes: minutesLeft }
+      };
+    }
+
+    // Calculer intérêts : 1% par jour
+    const dailyRate = 0.01;
+    const interestPerDay = Math.floor(user.balance * dailyRate);
+    const totalInterest = interestPerDay * daysElapsed;
+
+    // Limiter à 7 jours max (anti-abus si quelqu'un ne claim pas pendant des mois)
+    const cappedDays = Math.min(daysElapsed, 7);
+    const cappedInterest = interestPerDay * cappedDays;
+
+    user.balance += cappedInterest;
+    user.lastInterestClaim = now;
+    this.saveData();
+
+    const logger = require('./logger');
+    logger.logTransaction(userId, 'interest', cappedInterest, {
+      days: cappedDays,
+      rate: dailyRate,
+      oldBalance: user.balance - cappedInterest,
+      newBalance: user.balance
+    });
+
+    return {
+      eligible: true,
+      amount: cappedInterest,
+      days: cappedDays,
+      perDay: interestPerDay
+    };
+  }
+
+  // Assurance
+  buyInsurance(userId, duration = 7) {
+    const user = this.getUser(userId);
+    const cost = 500;
+
+    if (user.balance < cost) {
+      return { success: false, reason: "Balance insuffisante" };
+    }
+
+    // Vérifier si déjà assuré
+    if (user.insurance && user.insurance.expiresAt > Date.now()) {
+      return { success: false, reason: "Tu as déjà une assurance active" };
+    }
+
+    this.removeMoney(userId, cost);
+    
+    user.insurance = {
+      active: true,
+      expiresAt: Date.now() + (duration * 24 * 60 * 60 * 1000),
+      used: false
+    };
+
+    this.saveData();
+
+    const logger = require('./logger');
+    logger.logTransaction(userId, 'insurance_buy', cost, {
+      duration,
+      expiresAt: user.insurance.expiresAt
+    });
+
+    return {
+      success: true,
+      cost,
+      duration,
+      expiresAt: user.insurance.expiresAt
+    };
+  }
+
+  // Vérifier et utiliser l'assurance si broke
+  checkInsurance(userId) {
+    const user = this.getUser(userId);
+
+    if (!user.insurance || !user.insurance.active) {
+      return null;
+    }
+
+    // Vérifier si expirée
+    if (user.insurance.expiresAt < Date.now()) {
+      user.insurance.active = false;
+      this.saveData();
+      return null;
+    }
+
+    // Vérifier si déjà utilisée
+    if (user.insurance.used) {
+      return null;
+    }
+
+    // Si balance < 100, activer l'assurance
+    if (user.balance < 100) {
+      user.balance = 1000;
+      user.insurance.used = true;
+      user.insurance.active = false;
+      this.saveData();
+
+      const logger = require('./logger');
+      logger.logTransaction(userId, 'insurance_claim', 1000, {
+        triggered: true
+      });
+
+      return {
+        triggered: true,
+        amount: 1000
+      };
+    }
+
+    return null;
+  }
+
+  // Score de crédit
+  getCreditScore(userId) {
+    const user = this.getUser(userId);
+    
+    // Initialiser si nécessaire
+    if (typeof user.loansRepaidOnTime !== 'number') user.loansRepaidOnTime = 0;
+    if (typeof user.loansDefaulted !== 'number') user.loansDefaulted = 0;
+    
+    let score = 100; // Score de base
+    
+    // Bonus pour remboursements à temps
+    score += user.loansRepaidOnTime * 5;
+    
+    // Malus pour défauts de paiement
+    score -= user.loansDefaulted * 20;
+    
+    // Bonus si balance élevée
+    if (user.balance >= 50000) score += 10;
+    else if (user.balance >= 25000) score += 5;
+    
+    // Malus si a utilisé welfare récemment
+    if (user.hasUsedWelfare) score -= 10;
+    
+    // Limiter entre 0 et 100
+    return Math.max(0, Math.min(100, score));
+  }
+
+  // Amélioration du système de prêt - intérêts variables
+  requestLoan(borrowerId, lenderId, amount) {
+    const borrower = this.getUser(borrowerId);
+    const lender = this.getUser(lenderId);
+
+    // Vérifications
+    if (lender.balance < amount) {
+      return { success: false, reason: "Le prêteur n'a pas assez de coins" };
+    }
+
+    if (amount < 100 || amount > 5000) {
+      return { success: false, reason: "Montant invalide (min 100, max 5000)" };
+    }
+
+    if (!borrower.activeLoan) borrower.activeLoan = null;
+    if (borrower.activeLoan) {
+      return { success: false, reason: "Tu as déjà un prêt actif !" };
+    }
+
+    // Intérêts de base : 10%
+    let interestRate = 0.10;
+    
+    // Bonus/malus selon credit score
+    const creditScore = this.getCreditScore(borrowerId);
+    if (creditScore >= 90) interestRate = 0.08; // Très bon score
+    else if (creditScore >= 70) interestRate = 0.10; // Normal
+    else if (creditScore >= 50) interestRate = 0.12; // Moyen
+    else interestRate = 0.15; // Mauvais score
+
+    const interest = Math.floor(amount * interestRate);
+    const totalDue = amount + interest;
+
+    borrower.activeLoan = {
+      lenderId,
+      amount,
+      interest,
+      totalDue,
+      timestamp: Date.now(),
+      interestRate
+    };
+
+    // Transférer l'argent
+    this.removeMoney(lenderId, amount);
+    this.addMoney(borrowerId, amount);
+
+    this.saveData();
+
+    const logger = require('./logger');
+    logger.logTransaction(borrowerId, 'loan_received', amount, {
+      lenderId,
+      interestRate,
+      creditScore
+    });
+
+    return { 
+      success: true, 
+      amount, 
+      interest, 
+      totalDue,
+      interestRate,
+      creditScore,
+      lenderName: lenderId
+    };
+  }
+
+  // Amélioration du remboursement - tracking
+  repayLoan(borrowerId) {
+    const borrower = this.getUser(borrowerId);
+
+    if (!borrower.activeLoan) {
+      return { success: false, reason: "Tu n'as pas de prêt actif" };
+    }
+
+    const loan = borrower.activeLoan;
+
+    if (borrower.balance < loan.totalDue) {
+      return { 
+        success: false, 
+        reason: `Balance insuffisante ! Il te faut ${loan.totalDue} ${this.currency}`,
+        needed: loan.totalDue,
+        current: borrower.balance
+      };
+    }
+
+    // Calculer si remboursement à temps (< 7 jours)
+    const timeSinceLoan = Date.now() - loan.timestamp;
+    const daysElapsed = timeSinceLoan / (24 * 60 * 60 * 1000);
+    const onTime = daysElapsed <= 7;
+
+    // Rembourser
+    this.removeMoney(borrowerId, loan.totalDue);
+    this.addMoney(loan.lenderId, loan.totalDue);
+
+    // Tracker pour credit score
+    if (!borrower.loansRepaidOnTime) borrower.loansRepaidOnTime = 0;
+    if (!borrower.loansDefaulted) borrower.loansDefaulted = 0;
+    
+    if (onTime) {
+      borrower.loansRepaidOnTime++;
+    } else {
+      borrower.loansDefaulted++;
+    }
+
+    const lenderId = loan.lenderId;
+    borrower.activeLoan = null;
+    this.saveData();
+
+    const logger = require('./logger');
+    logger.logTransaction(borrowerId, 'loan_repaid', loan.totalDue, {
+      lenderId,
+      onTime,
+      daysElapsed: Math.floor(daysElapsed)
+    });
+
+    return { 
+      success: true, 
+      amount: loan.amount,
+      interest: loan.interest,
+      total: loan.totalDue,
+      onTime,
+      lenderId
+    };
+  }
 }
 
 module.exports = new EconomySystem();
