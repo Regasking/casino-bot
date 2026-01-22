@@ -44,8 +44,7 @@ module.exports = {
     economy.removeMoney(sender.id, amount);
     economy.addMoney(recipient.id, amount);
 
-    // Tracker pour achievement philanthrope
-    const senderUser = economy.getUser(sender.id);
+    // NOUVEAU: Tracker pour achievement philanthrope
     if (!senderUser.totalTransferred) senderUser.totalTransferred = 0;
     senderUser.totalTransferred += amount;
     economy.saveData();
