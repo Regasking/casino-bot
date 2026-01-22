@@ -8,7 +8,6 @@ module.exports = {
   
   async execute(interaction) {
     const user = economy.getUser(interaction.user.id);
-    
     // Couleur selon le rang
     const rankColors = {
       '🥉 Bronze': '#CD7F32',
@@ -17,7 +16,6 @@ module.exports = {
       '🏆 Platinum': '#E5E4E2',
       '💎 Diamond': '#B9F2FF'
     };
-    
     const embed = new EmbedBuilder()
       .setColor(rankColors[user.rank] || '#FFD700')
       .setAuthor({ 
@@ -37,7 +35,28 @@ module.exports = {
       .setThumbnail(interaction.user.displayAvatarURL())
       .setFooter({ text: `🏆 ${user.achievements?.length || 0} achievements débloqués` })
       .setTimestamp();
-    
+
+    // Ajout du credit score
+    const creditScore = economy.getCreditScore(interaction.user.id);
+    const scoreEmoji = creditScore >= 90 ? '⭐⭐⭐' : 
+                       creditScore >= 70 ? '⭐⭐' : 
+                       creditScore >= 50 ? '⭐' : '❌';
+    embed.addFields({
+      name: '💳 Score de crédit',
+      value: `${creditScore}/100 ${scoreEmoji}`,
+      inline: true
+    });
+
+    // Si assurance active
+    if (user.insurance && user.insurance.active && user.insurance.expiresAt > Date.now()) {
+      const daysLeft = Math.floor((user.insurance.expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+      embed.addFields({
+        name: '🛡️ Assurance',
+        value: user.insurance.used ? 'Utilisée' : `Active (${daysLeft}j)`,
+        inline: true
+      });
+    }
+
     await interaction.editReply({ embeds: [embed] });
   }
 };
