@@ -1,3 +1,4 @@
+const logger = require('./logger');
 const fs = require('fs');
 const path = require('path');
 
@@ -141,19 +142,31 @@ class EconomySystem {
 
   addMoney(userId, amount) {
     const user = this.getUser(userId);
+    const oldBalance = user.balance;
     user.balance += amount;
     user.totalWon += amount;
     this.updateRank(userId);
     this.saveData();
+    // LOG
+    logger.logTransaction(userId, 'credit', amount, {
+      oldBalance,
+      newBalance: user.balance
+    });
     return user.balance;
   }
 
   removeMoney(userId, amount) {
     const user = this.getUser(userId);
     if (user.balance < amount) return false;
+    const oldBalance = user.balance;
     user.balance -= amount;
     user.totalLost += amount;
     this.saveData();
+    // LOG
+    logger.logTransaction(userId, 'debit', amount, {
+      oldBalance,
+      newBalance: user.balance
+    });
     return true;
   }
 
@@ -173,11 +186,9 @@ class EconomySystem {
   updateStats(userId, won, amount, gameType = 'unknown') {
     const user = this.getUser(userId);
     user.gamesPlayed++;
-    
     // Track game type
     if (!user.gamesPlayedByType) user.gamesPlayedByType = {};
     user.gamesPlayedByType[gameType] = (user.gamesPlayedByType[gameType] || 0) + 1;
-    
     if (won) {
       user.totalWon += amount;
       user.currentStreak = (user.currentStreak || 0) + 1;
@@ -185,14 +196,17 @@ class EconomySystem {
       user.totalLost += amount;
       user.currentStreak = 0;
     }
-    
     // Calcul winrate
     const totalGames = user.gamesPlayed;
     const wins = Math.round((user.totalWon / (user.totalWon + user.totalLost)) * totalGames);
     user.winRate = ((wins / totalGames) * 100).toFixed(1);
-    
     this.saveData();
-    
+    // LOG
+    logger.logTransaction(userId, won ? 'game_win' : 'game_loss', amount, {
+      gameType,
+      oldBalance: user.balance - (won ? amount : -amount),
+      newBalance: user.balance
+    });
     // Vérifier achievements
     return this.checkAchievements(userId);
   }
