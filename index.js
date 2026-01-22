@@ -8,6 +8,20 @@ const economy = require('./systems/economy');
 const ai = require('./systems/ai');
 require('dotenv').config();
 
+// Cooldown anti-spam
+const userCooldowns = new Map();
+const COOLDOWN_TIME = 500; // 0.5 secondes
+
+function checkCooldown(userId) {
+  const now = Date.now();
+  const lastUse = userCooldowns.get(userId) || 0;
+  if (now - lastUse < COOLDOWN_TIME) {
+    return { onCooldown: true, timeLeft: COOLDOWN_TIME - (now - lastUse) };
+  }
+  userCooldowns.set(userId, now);
+  return { onCooldown: false };
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -72,7 +86,7 @@ client.once('ready', async () => {
 
   // Nettoyage automatique des prêts expirés
   const loanSystem = require('./systems/loans');
- loanSystem.cleanExpiredLoans();
+  loanSystem.cleanExpiredLoans();
   // Nettoyer les prêts expirés toutes les heures
   setInterval(() => {
     const loanSystem = require('./systems/loans');
@@ -143,6 +157,18 @@ client.on(Events.InteractionCreate, async interaction => {
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
+
+    // COOLDOWN CHECK (sauf pour /help et /balance)
+    if (!['help', 'balance'].includes(interaction.commandName)) {
+      const cooldown = checkCooldown(interaction.user.id);
+      if (cooldown.onCooldown) {
+        return interaction.reply({
+          content: `⏱️ Ralentis ! Attends ${Math.ceil(cooldown.timeLeft / 1000)} seconde(s).`,
+          ephemeral: true
+        });
+      }
+    }
+
     try {
       // RÉPONSE IMMÉDIATE (avant tout traitement)
       await interaction.reply({ 
@@ -438,5 +464,4 @@ client.on(Events.InteractionCreate, async interaction => {
 client.login(process.env.DISCORD_TOKEN);
 
 // Export pour partager activeGames
-
 module.exports = { client, activeGames };
