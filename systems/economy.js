@@ -9,16 +9,133 @@ class EconomySystem {
     this.currency = "🪙";
     this.startBalance = 1000;
     this.achievements = {
-      FIRST_WIN: { name: '🎉 Première victoire', description: 'Gagne ta première partie', reward: 500 },
-      HIGH_ROLLER: { name: '💎 High Roller', description: 'Mise 5000+ coins en une fois', reward: 1000 },
-      LUCKY_STREAK: { name: '🔥 Série chanceuse', description: 'Gagne 5 parties d\'affilée', reward: 2000 },
-      MILLIONAIRE: { name: '💰 Millionnaire', description: 'Atteins 100,000 coins', reward: 5000 },
-      VETERAN: { name: '🎮 Vétéran', description: 'Joue 100 parties', reward: 3000 },
-      COMEBACK_KID: { name: '🆙 Retour gagnant', description: 'Passe de <100 à 10,000+ coins', reward: 2500 },
-      ALL_GAMES: { name: '🎯 Joueur complet', description: 'Joue à tous les jeux', reward: 1500 },
-      BLACKJACK_NATURAL: { name: '🃏 Blackjack naturel', description: 'Obtiens un Blackjack (21 direct)', reward: 1000 },
-      CRASH_MASTER: { name: '💥 Maître du Crash', description: 'Cash out à 10x ou plus', reward: 2000 },
-      BROKE_NO_MORE: { name: '💪 Plus jamais broke', description: 'Atteins 50,000 coins sans utiliser welfare', reward: 3000 }
+      // Achievements simples (existants)
+      FIRST_WIN: { name: '🎉 Première victoire', description: 'Gagne ta première partie', reward: 500, secret: false },
+      HIGH_ROLLER: { name: '💎 High Roller', description: 'Mise 5000+ coins en une fois', reward: 1000, secret: false },
+      LUCKY_STREAK: { name: '🔥 Série chanceuse', description: 'Gagne 5 parties d\'affilée', reward: 2000, secret: false },
+      MILLIONAIRE: { name: '💰 Millionnaire', description: 'Atteins 100,000 coins', reward: 5000, secret: false },
+      VETERAN: { name: '🎮 Vétéran', description: 'Joue 100 parties', reward: 3000, secret: false },
+      COMEBACK_KID: { name: '🆙 Retour gagnant', description: 'Passe de <100 à 10,000+ coins', reward: 2500, secret: false },
+      ALL_GAMES: { name: '🎯 Joueur complet', description: 'Joue à tous les jeux', reward: 1500, secret: false },
+      BLACKJACK_NATURAL: { name: '🃏 Blackjack naturel', description: 'Obtiens un Blackjack (21 direct)', reward: 1000, secret: false },
+      CRASH_MASTER: { name: '💥 Maître du Crash', description: 'Cash out à 10x ou plus', reward: 2000, secret: false },
+      BROKE_NO_MORE: { name: '💪 Plus jamais broke', description: 'Atteins 50,000 coins sans utiliser welfare', reward: 3000, secret: false },
+
+      // NOUVEAUX - Achievements progressifs
+      CRASH_NOVICE: {
+        name: '💥 Crash Novice',
+        description: 'Joue 10 parties de Crash',
+        reward: 500,
+        requirement: 10,
+        type: 'progressive',
+        game: 'crash',
+        secret: false
+      },
+      CRASH_AMATEUR: {
+        name: '💥 Crash Amateur',
+        description: 'Joue 50 parties de Crash',
+        reward: 1500,
+        requirement: 50,
+        type: 'progressive',
+        game: 'crash',
+        secret: false
+      },
+      CRASH_PRO: {
+        name: '💥 Crash Pro',
+        description: 'Joue 100 parties de Crash',
+        reward: 3000,
+        requirement: 100,
+        type: 'progressive',
+        game: 'crash',
+        secret: false
+      },
+      DICE_MASTER: {
+        name: '🎲 Maître du Dé',
+        description: 'Gagne 20 parties de Dice',
+        reward: 2000,
+        requirement: 20,
+        type: 'progressive',
+        game: 'dice',
+        secret: false
+      },
+      BLACKJACK_ACE: {
+        name: '🃏 As du Blackjack',
+        description: 'Gagne 30 parties de Blackjack',
+        reward: 2500,
+        requirement: 30,
+        type: 'progressive',
+        game: 'blackjack',
+        secret: false
+      },
+      ROULETTE_KING: {
+        name: '🎰 Roi de la Roulette',
+        description: 'Gagne 25 parties de Roulette',
+        reward: 2200,
+        requirement: 25,
+        type: 'progressive',
+        game: 'roulette',
+        secret: false
+      },
+
+      // NOUVEAUX - Achievements secrets
+      SECRET_WHALE: {
+        name: '🐋 Baleine Cachée',
+        description: '???',
+        hiddenDescription: 'Mise 50,000 coins en une seule fois',
+        reward: 10000,
+        secret: true
+      },
+      SECRET_IMMORTAL: {
+        name: '👑 Immortel',
+        description: '???',
+        hiddenDescription: 'Gagne 20 parties d\'affilée',
+        reward: 15000,
+        secret: true
+      },
+      SECRET_PHILANTHROPIST: {
+        name: '🎁 Philanthrope',
+        description: '???',
+        hiddenDescription: 'Transfère un total de 50,000 coins',
+        reward: 5000,
+        secret: true
+      },
+      SECRET_INSURANCE_FRAUD: {
+        name: '😈 Fraudeur',
+        description: '???',
+        hiddenDescription: 'Déclenche l\'assurance 3 fois',
+        reward: 3000,
+        secret: true
+      },
+      SECRET_INTEREST_BARON: {
+        name: '💳 Baron des Intérêts',
+        description: '???',
+        hiddenDescription: 'Accumule 10,000 coins d\'intérêts bancaires',
+        reward: 5000,
+        secret: true
+      },
+
+      // NOUVEAUX - Achievements négatifs (fun)
+      ULTIMATE_LOSER: {
+        name: '💀 Roi des Loosers',
+        description: 'Perds 50,000 coins au total',
+        reward: 2000,
+        badge: '💀',
+        secret: false
+      },
+      BROKE_CHAMPION: {
+        name: '🤡 Champion du Broke',
+        description: 'Utilise welfare 10 fois',
+        reward: 1000,
+        badge: '🤡',
+        secret: false
+      },
+      GAMBLING_ADDICT: {
+        name: '🎰 Accro au Jeu',
+        description: 'Joue 500 parties',
+        reward: 5000,
+        badge: '🎰',
+        secret: false
+      }
     };
   }
 
@@ -79,59 +196,77 @@ class EconomySystem {
     const user = this.getUser(userId);
     const newAchievements = [];
 
-    // Première victoire
-    if (!user.achievements.includes('FIRST_WIN') && user.totalWon > 0) {
-      user.achievements.push('FIRST_WIN');
-      user.balance += this.achievements.FIRST_WIN.reward;
-      newAchievements.push('FIRST_WIN');
+    // Initialiser tracking si nécessaire
+    if (!user.totalTransferred) user.totalTransferred = 0;
+    if (!user.totalInterestEarned) user.totalInterestEarned = 0;
+    if (!user.insuranceTriggered) user.insuranceTriggered = 0;
+    if (!user.welfareUsedCount) user.welfareUsedCount = 0;
+    if (!user.gameWins) user.gameWins = {};
+    if (!user.bestWinStreak) user.bestWinStreak = 0;
+
+    // Mettre à jour meilleure série
+    if (user.currentStreak > user.bestWinStreak) {
+      user.bestWinStreak = user.currentStreak;
     }
 
-    // Millionnaire
-    if (!user.achievements.includes('MILLIONAIRE') && user.balance >= 100000) {
-      user.achievements.push('MILLIONAIRE');
-      user.balance += this.achievements.MILLIONAIRE.reward;
-      newAchievements.push('MILLIONAIRE');
-    }
+    // Vérifier chaque achievement
+    Object.entries(this.achievements).forEach(([id, ach]) => {
+      // Skip si déjà débloqué
+      if (user.achievements.includes(id)) return;
 
-    // Vétéran
-    if (!user.achievements.includes('VETERAN') && user.gamesPlayed >= 100) {
-      user.achievements.push('VETERAN');
-      user.balance += this.achievements.VETERAN.reward;
-      newAchievements.push('VETERAN');
-    }
+      let unlocked = false;
 
-    // Série chanceuse
-    if (!user.achievements.includes('LUCKY_STREAK') && user.currentStreak >= 5) {
-      user.achievements.push('LUCKY_STREAK');
-      user.balance += this.achievements.LUCKY_STREAK.reward;
-      newAchievements.push('LUCKY_STREAK');
-    }
+      // Achievements simples
+      if (id === 'FIRST_WIN' && user.totalWon > 0) unlocked = true;
+      if (id === 'MILLIONAIRE' && user.balance >= 100000) unlocked = true;
+      if (id === 'VETERAN' && user.gamesPlayed >= 100) unlocked = true;
+      if (id === 'LUCKY_STREAK' && user.currentStreak >= 5) unlocked = true;
+      if (id === 'BROKE_NO_MORE' && user.balance >= 50000 && !user.hasUsedWelfare) unlocked = true;
+      if (id === 'CRASH_MASTER' && user.highestCashout >= 10) unlocked = true;
+      if (id === 'ULTIMATE_LOSER' && user.totalLost >= 50000) unlocked = true;
+      if (id === 'GAMBLING_ADDICT' && user.gamesPlayed >= 500) unlocked = true;
+      if (id === 'BROKE_CHAMPION' && user.welfareUsedCount >= 10) unlocked = true;
 
-    // Joueur complet
-    const allGames = ['crash', 'dice', 'blackjack', 'roulette'];
-    const playedGames = Object.keys(user.gamesPlayedByType || {});
-    if (!user.achievements.includes('ALL_GAMES') && 
-        allGames.every(game => playedGames.includes(game))) {
-      user.achievements.push('ALL_GAMES');
-      user.balance += this.achievements.ALL_GAMES.reward;
-      newAchievements.push('ALL_GAMES');
-    }
+      // ALL_GAMES
+      if (id === 'ALL_GAMES') {
+        const allGames = ['crash', 'dice', 'blackjack', 'roulette'];
+        const playedGames = Object.keys(user.gamesPlayedByType || {});
+        if (allGames.every(game => playedGames.includes(game))) unlocked = true;
+      }
 
-    // Plus jamais broke
-    if (!user.achievements.includes('BROKE_NO_MORE') && 
-        user.balance >= 50000 && 
-        !user.hasUsedWelfare) {
-      user.achievements.push('BROKE_NO_MORE');
-      user.balance += this.achievements.BROKE_NO_MORE.reward;
-      newAchievements.push('BROKE_NO_MORE');
-    }
+      // Achievements progressifs par jeu
+      if (ach.type === 'progressive' && ach.game) {
+        const gamesPlayed = user.gamesPlayedByType?.[ach.game] || 0;
+        if (gamesPlayed >= ach.requirement) unlocked = true;
+      }
 
-    // Maître du crash
-    if (!user.achievements.includes('CRASH_MASTER') && user.highestCashout >= 10) {
-      user.achievements.push('CRASH_MASTER');
-      user.balance += this.achievements.CRASH_MASTER.reward;
-      newAchievements.push('CRASH_MASTER');
-    }
+      // Achievements progressifs par victoires
+      if (id === 'DICE_MASTER') {
+        const wins = user.gameWins?.dice || 0;
+        if (wins >= 20) unlocked = true;
+      }
+      if (id === 'BLACKJACK_ACE') {
+        const wins = user.gameWins?.blackjack || 0;
+        if (wins >= 30) unlocked = true;
+      }
+      if (id === 'ROULETTE_KING') {
+        const wins = user.gameWins?.roulette || 0;
+        if (wins >= 25) unlocked = true;
+      }
+
+      // Achievements secrets
+      if (id === 'SECRET_IMMORTAL' && user.bestWinStreak >= 20) unlocked = true;
+      if (id === 'SECRET_PHILANTHROPIST' && user.totalTransferred >= 50000) unlocked = true;
+      if (id === 'SECRET_INSURANCE_FRAUD' && user.insuranceTriggered >= 3) unlocked = true;
+      if (id === 'SECRET_INTEREST_BARON' && user.totalInterestEarned >= 10000) unlocked = true;
+
+      // Si débloqué, ajouter
+      if (unlocked) {
+        user.achievements.push(id);
+        user.balance += ach.reward;
+        newAchievements.push(id);
+      }
+    });
 
     if (newAchievements.length > 0) {
       this.saveData();
@@ -189,9 +324,19 @@ class EconomySystem {
     // Track game type
     if (!user.gamesPlayedByType) user.gamesPlayedByType = {};
     user.gamesPlayedByType[gameType] = (user.gamesPlayedByType[gameType] || 0) + 1;
+    // Track wins by game
+    if (!user.gameWins) user.gameWins = {};
+    if (won) {
+      user.gameWins[gameType] = (user.gameWins[gameType] || 0) + 1;
+    }
     if (won) {
       user.totalWon += amount;
       user.currentStreak = (user.currentStreak || 0) + 1;
+      // Meilleure série
+      if (!user.bestWinStreak) user.bestWinStreak = 0;
+      if (user.currentStreak > user.bestWinStreak) {
+        user.bestWinStreak = user.currentStreak;
+      }
     } else {
       user.totalLost += amount;
       user.currentStreak = 0;
@@ -202,6 +347,7 @@ class EconomySystem {
     user.winRate = ((wins / totalGames) * 100).toFixed(1);
     this.saveData();
     // LOG
+    const logger = require('./logger');
     logger.logTransaction(userId, won ? 'game_win' : 'game_loss', amount, {
       gameType,
       oldBalance: user.balance - (won ? amount : -amount),
@@ -246,10 +392,13 @@ class EconomySystem {
     if (user.balance >= 100) {
       return { success: false, reason: "Tu as encore des coins" };
     }
-    
     user.balance = 500;
     user.hasUsedWelfare = true;
+    // NOUVEAU: Tracker count
+    if (!user.welfareUsedCount) user.welfareUsedCount = 0;
+    user.welfareUsedCount++;
     this.saveData();
+    this.checkAchievements(userId); // Vérifier achievements
     return { success: true, amount: 500 };
   }
 
@@ -491,6 +640,9 @@ class EconomySystem {
 
     user.balance += cappedInterest;
     user.lastInterestClaim = now;
+    // Tracker pour achievement
+    if (!user.totalInterestEarned) user.totalInterestEarned = 0;
+    user.totalInterestEarned += cappedInterest;
     this.saveData();
 
     const logger = require('./logger');
@@ -572,6 +724,9 @@ class EconomySystem {
       user.balance = 1000;
       user.insurance.used = true;
       user.insurance.active = false;
+      // Tracker pour achievement
+      if (!user.insuranceTriggered) user.insuranceTriggered = 0;
+      user.insuranceTriggered++;
       this.saveData();
 
       const logger = require('./logger');
