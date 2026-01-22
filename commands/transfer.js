@@ -44,6 +44,13 @@ module.exports = {
     economy.removeMoney(sender.id, amount);
     economy.addMoney(recipient.id, amount);
 
+    // Tracker pour achievement philanthrope
+    const senderUser = economy.getUser(sender.id);
+    if (!senderUser.totalTransferred) senderUser.totalTransferred = 0;
+    senderUser.totalTransferred += amount;
+    economy.saveData();
+    economy.checkAchievements(sender.id);
+
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
       .setTitle('💸 VIREMENT EFFECTUÉ')
