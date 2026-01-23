@@ -43,38 +43,38 @@ module.exports = {
       .addFields(
         {
           name: '💰 Balance',
-          value: `${user1.username}: **${data1.balance.toLocaleString()}** ${economy.currency}\n${user2.username}: **${data2.balance.toLocaleString()}** ${economy.currency}\n${comparisons.balance.username === user1.username ? '👑' : '👑'} ${comparisons.balance.username}`,
+          value: `${user1.username}: **${data1.balance.toLocaleString()}** ${economy.currency}\n${user2.username}: **${data2.balance.toLocaleString()}** ${economy.currency}\n👑 ${comparisons.balance.username}`,
           inline: true
         },
         {
           name: '🎯 Winrate',
-          value: `${user1.username}: **${data1.winRate}%**\n${user2.username}: **${data2.winRate}%**\n${comparisons.winrate.username === user1.username ? '👑' : '👑'} ${comparisons.winrate.username}`,
+          value: `${user1.username}: **${data1.winRate}%**\n${user2.username}: **${data2.winRate}%**\n👑 ${comparisons.winrate.username}`,
           inline: true
         },
         {
           name: '🎮 Parties',
-          value: `${user1.username}: **${data1.gamesPlayed}**\n${user2.username}: **${data2.gamesPlayed}**\n${comparisons.games.username === user1.username ? '👑' : '👑'} ${comparisons.games.username}`,
+          value: `${user1.username}: **${data1.gamesPlayed}**\n${user2.username}: **${data2.gamesPlayed}**\n👑 ${comparisons.games.username}`,
           inline: true
         },
         {
           name: '🏆 Achievements',
-          value: `${user1.username}: **${data1.achievements?.length || 0}**\n${user2.username}: **${data2.achievements?.length || 0}**\n${comparisons.achievements.username === user1.username ? '👑' : '👑'} ${comparisons.achievements.username}`,
+          value: `${user1.username}: **${data1.achievements?.length || 0}**\n${user2.username}: **${data2.achievements?.length || 0}**\n👑 ${comparisons.achievements.username}`,
           inline: true
         },
         {
           name: '📈 Total gagné',
-          value: `${user1.username}: **${data1.totalWon.toLocaleString()}** ${economy.currency}\n${user2.username}: **${data2.totalWon.toLocaleString()}** ${economy.currency}\n${comparisons.totalWon.username === user1.username ? '👑' : '👑'} ${comparisons.totalWon.username}`,
+          value: `${user1.username}: **${data1.totalWon.toLocaleString()}** ${economy.currency}\n${user2.username}: **${data2.totalWon.toLocaleString()}** ${economy.currency}\n👑 ${comparisons.totalWon.username}`,
           inline: true
         },
         {
           name: '🔥 Meilleure série',
-          value: `${user1.username}: **${data1.bestWinStreak || 0}** victoires\n${user2.username}: **${data2.bestWinStreak || 0}** victoires\n${comparisons.streak.username === user1.username ? '👑' : '👑'} ${comparisons.streak.username}`,
+          value: `${user1.username}: **${data1.bestWinStreak || 0}** victoires\n${user2.username}: **${data2.bestWinStreak || 0}** victoires\n👑 ${comparisons.streak.username}`,
           inline: true
         }
       )
       .setTimestamp();
 
-    // Calculer score global (qui domine globalement)
+    // Calculer score global
     const score1 = Object.values(comparisons).filter(winner => winner.id === user1.id).length;
     const score2 = Object.values(comparisons).filter(winner => winner.id === user2.id).length;
 
@@ -91,4 +91,4 @@ module.exports = {
 
     await interaction.editReply({ embeds: [embed] });
   }
-};s
+};
